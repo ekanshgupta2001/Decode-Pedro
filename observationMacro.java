@@ -77,7 +77,8 @@ public class observationMacro extends OpMode {
 
     @Override
     public void loop() {
-
+        rotateRampPosition(250, 0.8);
+        shoot(2500, 1.0, 1.0);
     }
 
     public void rotateRampPosition(int position, double power) {

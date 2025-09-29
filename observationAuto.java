@@ -17,6 +17,8 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -38,9 +40,8 @@ public class observationAuto extends LinearOpMode {
     private CRServo rotateL;
     private CRServo rotateR;
     private observationMacro scoreMacro;
-
-//    private Limelight3A limelight;
     private int pathState;
+
     private final Pose score1 = new Pose(0, 0, Math.toRadians(-15));
     private final Pose moveToObservation = new Pose(-25, -5, Math.toRadians(0));
     private final Pose returnToScore = new Pose(0, 0, Math.toRadians(-15));
@@ -76,13 +77,9 @@ public class observationAuto extends LinearOpMode {
         move = follower.pathBuilder()
                 .addPath(new BezierLine(score1, moveToObservation))
                 .setLinearHeadingInterpolation(score1.getHeading(), moveToObservation.getHeading())
-                .addPath(new BezierLine(score1, moveToObservation))
-                .setLinearHeadingInterpolation(score1.getHeading(), moveToObservation.getHeading())
                 .build();
 
         observationPickup = follower.pathBuilder()
-                .addPath(new BezierLine(moveToObservation, returnToScore))
-                .setLinearHeadingInterpolation(moveToObservation.getHeading(), returnToScore.getHeading())
                 .addPath(new BezierLine(moveToObservation, returnToScore))
                 .setLinearHeadingInterpolation(moveToObservation.getHeading(), returnToScore.getHeading())
                 .build();
@@ -90,29 +87,45 @@ public class observationAuto extends LinearOpMode {
         moveAgain = follower.pathBuilder()
                 .addPath(new BezierLine(returnToScore, movetoObservationTwo))
                 .setLinearHeadingInterpolation(returnToScore.getHeading(), movetoObservationTwo.getHeading())
-                .addPath(new BezierLine(returnToScore, movetoObservationTwo))
-                .setLinearHeadingInterpolation(returnToScore.getHeading(), movetoObservationTwo.getHeading())
                 .build();
 
         observationPickuptwo = follower.pathBuilder()
                 .addPath(new BezierLine(movetoObservationTwo, returnToScoretwo))
                 .setLinearHeadingInterpolation(movetoObservationTwo.getHeading(), returnToScoretwo.getHeading())
-                .addPath(new BezierLine(movetoObservationTwo, returnToScoretwo))
-                .setLinearHeadingInterpolation(movetoObservationTwo.getHeading(), returnToScoretwo.getHeading())
                 .build();
-
-        follower.followPath(move);
     }
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                scoreMacro();
+                scoreMacro.start();
+                setPathState(1);
+                break;
+            case 1:
+                if (!follower.isBusy()){
+
+                }
+                follower.followPath(move);
                 break;
 
-            case 1:
-                follower.followPath(move);
-                break
+            case 2:
+                follower.followPath(observationPickup);
+                break;
+            case 3:
+                scoreMacro.start();
+                break;
+            case 4:
+                follower.followPath(moveAgain);
+                break;
+            case 5:
+                follower.followPath(observationPickuptwo);
+                break;
+            case 6:
+                scoreMacro.start();
         }
+    }
+    public void setPathState(int pState) {
+        pathState = pState;
+        pathTimer.resetTimer();
     }
 
 }
