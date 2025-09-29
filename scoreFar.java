@@ -25,11 +25,13 @@ public class scoreFar extends OpMode {
     private final ElapsedTime runtime = new ElapsedTime();
     private final ElapsedTime sequenceTimer = new ElapsedTime();
     private final ElapsedTime sampleTimer = new ElapsedTime();
-    private Servo rotateRampL;
-    private Servo rotateRampR;
-    private DcMotor scoreMotor = null;
+    private DcMotor rotateRampMotor;
+    private DcMotor scoreMotorL;
+    private DcMotor scoreMotorR;
     private DcMotor intakeMotorL;
     private DcMotor intakeMotorR;
+    private CRServo scoreIntakeL;
+    private CRServo scoreIntakeR;
 
     private Limelight3A limelight;
 
@@ -53,11 +55,15 @@ public class scoreFar extends OpMode {
         intakeMotorL.setDirection(DcMotor.Direction.FORWARD);
         intakeMotorR.setDirection(DcMotor.Direction.FORWARD);
 
-        scoreMotor = hardwareMap.get(DcMotor.class, "Score Motor");
-        scoreMotor.setDirection(DcMotor.Direction.FORWARD);
+        rotateRampMotor = hardwareMap.get(DcMotor.class, "RotateRampMotor");
 
-        rotateRampL = hardwareMap.get(Servo.class, "RotateRampLeft");
-        rotateRampL = hardwareMap.get(Servo.class, "RotateRampRight");
+        scoreIntakeL = hardwareMap.get(CRServo.class, "IntakeShooterLeft");
+        scoreIntakeR = hardwareMap.get(CRServo.class, "IntakeShooterRight");
+
+        scoreMotorL = hardwareMap.get(DcMotor.class, "ScoreMotorLeft");
+        scoreMotorL.setDirection(DcMotor.Direction.REVERSE);
+        scoreMotorR = hardwareMap.get(DcMotor.class, "ScoreMotorRight");
+        scoreMotorR.setDirection(DcMotor.Direction.FORWARD);
 
         pathTimer = new Timer();
         actionTimer = new Timer();
@@ -71,14 +77,25 @@ public class scoreFar extends OpMode {
 
     @Override
     public void loop() {
-        rotateRampL.setPosition(0.75);
-        rotateRampR.setPosition(0.75);
-        scoreMotor.setPower(1.0);
+        rotateRampPosition(250, 0.8);
+        shoot(2500, 1.0, 1.0);
+    }
 
-        scoreMotor.setPower(0);
-        rotateRampL.setPosition(1.0);
-        rotateRampR.setPosition(1.0);
+    public void rotateRampPosition(int position, double power) {
+        rotateRampMotor.setTargetPosition(position);
+        rotateRampMotor.setPower(power);
+        rotateRampMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    }
 
+    public void shoot(long time, double power, double servoPower){
+        if (pathTimer.getElapsedTime() > time){
+            scoreIntakeL.setPower(servoPower);
+            scoreIntakeR.setPower(-servoPower);
+
+            scoreMotorL.setPower(power);
+            scoreMotorR.setPower(power);
+
+        }
     }
 
 }

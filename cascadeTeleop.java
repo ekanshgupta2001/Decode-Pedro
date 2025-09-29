@@ -1,21 +1,22 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.decode_teleop;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.ftc.localization.Encoder;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
+@TeleOp(name = "Cascade Teleop", group = "Robot")
 public class cascadeTeleop extends OpMode {
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
-
-    private DcMotor slideMotor;
-    private DcMotor armMotor;
     private DcMotor lfMotor = null;
     private DcMotor lrMotor = null;
     private DcMotor rfMotor = null;
@@ -23,8 +24,12 @@ public class cascadeTeleop extends OpMode {
     private DcMotor scoreMotor = null;
     private DcMotor intakeMotorL = null;
     private DcMotor intakeMotorR = null;
+    private DcMotorEx parallelEncoder;
+    private DcMotorEx perpendicularEncoder;
     private Servo rotateRampL;
     private Servo rotateRampR;
+    private double currentPower = 0;
+    private double adjustSpeed = 1.0;
     public scoreFar farScore;
     public mediumScore scoreMedium;
     public closeScore scoreClose;
@@ -34,15 +39,10 @@ public class cascadeTeleop extends OpMode {
 
         follower = Constants.createFollower(hardwareMap);
 
-        slideMotor = hardwareMap.get(DcMotor.class, "Slide Motor");
-        slideMotor.setDirection(DcMotor.Direction.FORWARD);
-        slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        armMotor = hardwareMap.get(DcMotor.class, "Arm Motor");
-        armMotor.setDirection(DcMotor.Direction.FORWARD);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rfMotor = hardwareMap.dcMotor.get("frontRightMotor");
+        lfMotor = hardwareMap.dcMotor.get("frontLeftMotor");
+        rrMotor = hardwareMap.dcMotor.get("backRightMotor");
+        lrMotor = hardwareMap.dcMotor.get("backLeftMotor");
 
         intakeMotorL = hardwareMap.get(DcMotor.class, "intakeMotorLeft");
         intakeMotorR = hardwareMap.get(DcMotor.class, "intakeMotorRight");
@@ -53,7 +53,10 @@ public class cascadeTeleop extends OpMode {
         scoreMotor.setDirection(DcMotor.Direction.FORWARD);
 
         rotateRampL = hardwareMap.get(Servo.class, "RotateRampLeft");
-        rotateRampL = hardwareMap.get(Servo.class, "RotateRampRight");
+        rotateRampR = hardwareMap.get(Servo.class, "RotateRampRight");
+
+        parallelEncoder = hardwareMap.get(DcMotorEx.class, "parallelEncoder");
+        perpendicularEncoder = hardwareMap.get(DcMotorEx.class, "perpendicularEncoder");
 
 
         pathTimer = new Timer();
@@ -73,6 +76,14 @@ public class cascadeTeleop extends OpMode {
         farTriangle();
         mediumTriangle();
         closeTriangle();
+
+        telemetry.addData("Front Left Power", lfMotor.getPower());
+        telemetry.addData("Front Right Power", rfMotor.getPower());
+        telemetry.addData("Back Left Power", lrMotor.getPower());
+        telemetry.addData("Back Right Power", rrMotor.getPower());
+        telemetry.addData("Intake Left Power", intakeMotorL.getPower());
+        telemetry.addData("Intake Right Power", intakeMotorR.getPower());
+        telemetry.update();
     }
 
     public void movement(){
@@ -85,12 +96,30 @@ public class cascadeTeleop extends OpMode {
         double rf = drive - strafe - turn;
         double rr = drive + strafe - turn;
 
-        double max = Math.max(Math.abs(lf), Math.max(Math.abs(lr), Math.max(Math.abs(rf), Math.abs(rr))));
-        if (max > 1) {
-            lf /= max;
-            lr /= max;
-            rf /= max;
-            rr /= max;
+//        double max = Math.max(Math.abs(lf), Math.max(Math.abs(lr), Math.max(Math.abs(rf), Math.abs(rr))));
+//        if (max > 1) {
+//            lf /= max;
+//            lr /= max;
+//            rf /= max;
+//            rr /= max;
+//        }
+
+        lf *= adjustSpeed;
+        lr *= adjustSpeed;
+        rf *= adjustSpeed;
+        rr *= adjustSpeed;
+
+        if (gamepad1.dpad_up){
+            adjustSpeed = 1.0;
+        }
+
+
+        if (gamepad1.right_bumper) {
+            adjustSpeed += 0.2;
+        }
+
+        if (gamepad1.left_bumper) {
+            adjustSpeed -= 0.2;
         }
 
         lfMotor.setPower(lf);
@@ -102,7 +131,7 @@ public class cascadeTeleop extends OpMode {
 
     public void intake(){
         if (gamepad2.left_bumper) {
-            intakeMotorR.setPower(1.0);
+                intakeMotorR.setPower(1.0);
             intakeMotorL.setPower(-1.0);
         } else if (gamepad2.right_bumper) {
             intakeMotorL.setPower(1.0);
