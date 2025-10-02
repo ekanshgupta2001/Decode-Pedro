@@ -30,6 +30,7 @@ public class cascadeTeleop extends OpMode {
     private Servo rotateRampR;
     private double currentPower = 0;
     private double adjustSpeed = 1.0;
+    private double intakeDirection = 0.0;
     public scoreFar farScore;
     public mediumScore scoreMedium;
     public closeScore scoreClose;
@@ -83,6 +84,8 @@ public class cascadeTeleop extends OpMode {
         telemetry.addData("Back Right Power", rrMotor.getPower());
         telemetry.addData("Intake Left Power", intakeMotorL.getPower());
         telemetry.addData("Intake Right Power", intakeMotorR.getPower());
+        telemetry.addData("Perpendicular Encoders", perpendicularEncoder);
+        telemetry.addData("Parallel Encoders", parallelEncoder);
         telemetry.update();
     }
 
@@ -96,13 +99,13 @@ public class cascadeTeleop extends OpMode {
         double rf = drive - strafe - turn;
         double rr = drive + strafe - turn;
 
-//        double max = Math.max(Math.abs(lf), Math.max(Math.abs(lr), Math.max(Math.abs(rf), Math.abs(rr))));
-//        if (max > 1) {
-//            lf /= max;
-//            lr /= max;
-//            rf /= max;
-//            rr /= max;
-//        }
+        double max = Math.max(Math.abs(lf), Math.max(Math.abs(lr), Math.max(Math.abs(rf), Math.abs(rr))));
+        if (max > 1) {
+            lf /= max;
+            lr /= max;
+            rf /= max;
+            rr /= max;
+        }
 
         lf *= adjustSpeed;
         lr *= adjustSpeed;
@@ -130,10 +133,12 @@ public class cascadeTeleop extends OpMode {
     }
 
     public void intake(){
-        if (gamepad2.left_bumper) {
+        intakeDirection = gamepad1.left_trigger - gamepad1.right_trigger;
+
+        if (intakeDirection > 0) {
                 intakeMotorR.setPower(1.0);
             intakeMotorL.setPower(-1.0);
-        } else if (gamepad2.right_bumper) {
+        } else if (intakeDirection < 0) {
             intakeMotorL.setPower(1.0);
             intakeMotorR.setPower(-1.0);
         } else {
